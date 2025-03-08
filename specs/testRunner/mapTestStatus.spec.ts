@@ -1,7 +1,7 @@
 import { describe, it } from "node:test";
 // @ts-ignore
 import { expect } from "chai";
-import { mapTestStatus } from "../../src/utils";
+import { mapTestStatus } from "../../src/testRunner/index";
 
 describe("Testsuite: mapTestStatus", () => {
   it("Should be a function", () => {

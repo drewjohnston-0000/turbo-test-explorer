@@ -1,7 +1,7 @@
 import { describe, it } from "node:test";
 // @ts-ignore
 import { expect } from "chai";
-import { buildCommand } from "../../src/utils";
+import { buildCommand } from "../../src/testRunner/index";
 
 describe("Testsuite: buildCommand", () => {
   it("Should be a function", () => {
