@@ -1,0 +1,20 @@
+{
+	"compilerOptions": {
+		"target": "ESNext",
+		"module": "NodeNext",
+		"outDir": "./dist",
+		"paths": {},
+		"typeRoots": ["../../node_modules/@types", "./src/custom-types"],
+		"emitDecoratorMetadata": true,
+		"experimentalDecorators": true,
+		"strict": true,
+		"removeComments": true,
+		"preserveConstEnums": true,
+		"sourceMap": false,
+		"esModuleInterop": true,
+		"strictNullChecks": true,
+		"forceConsistentCasingInFileNames": true
+	},
+	"exclude": ["node_modules", "dist", "specs"],
+	"include": ["./src"]
+}
