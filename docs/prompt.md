@@ -15,60 +15,87 @@ The extension should have the following core features:
    - Provide gutter decorations for test results (e.g., icons for passed/failed tests).
 
 4. **TDD & Quality Requirements:**
-   - Write unit tests for each module (e.g., package detection, test discovery, test execution, result parsing) using the Node.js native test runner.
-   - Use chai for assertions.
-   - Follow this template for each spec file:
-     ```typescript
-     import { describe, it, beforeEach, afterEach } from "node:test";
-     import { expect } from "chai";
-     
-     describe("Extension", () => {
-       describe("#extension_function", () => {
-         it("Should be a function", () => {
-           expect(myFunction).to.be.a("function");
-         });
-       });
-     });
-     ```
-   - Ensure every piece of code is free of TypeScript compiler and linting errors.
-   - Write small, incremental commits with meaningful messages.
+   - Write unit tests for each module using the Node.js native test runner with chai for assertions
+   - Functions should be named the same as their containing files
+   - Each file should contain exactly one exported function
+   - Prefer named function declarations over anonymous arrow functions
+   - Follow the instructions in the `specs/README.md` for writing tests
+   - Ensure every piece of code is free of TypeScript compiler and linting errors
 
-5. **Project Structure:**  
+5. **Code Organization Guidelines:**
+   - Type definitions go in `src/custom-types/` with one type per file (no exports needed)
+   - VS Code-specific code belongs in `src/vscodeCore/`
+   - Core testable logic goes in `src/` and should avoid VS Code dependencies
+   - Test mocks go in `specs/mocks/` folder
+   - Two spaces for indentation
+   - Prefer type definitions over interfaces
+   - Prefer functional programming over classes
+   - Keep files under 200 lines
+
+6. **Project Structure:**  
    Follow this simplified file structure:
 
 ```
 TurboTestExplorer/
-├── src/
-│   ├── extension.ts          // Entry point: initialize extension, register TestController
-│   ├── testController.ts     // Manages test discovery and integration with VS Code Testing API
-│   ├── testRunner.ts         // Executes Turbo test commands (calls npx turbo run test --filter=<package>)
-│   ├── packageDetector.ts    // Contains logic to detect the current package from the active file’s location
-│   ├── ui/
-│   │   ├── decorations.ts    // Provides gutter decorations based on test results
-│   │   ├── codeLens.ts       // Provides CodeLens actions for running and debugging tests
-│   ├── config.ts             // Handles extension configuration settings (e.g., test file pattern)
-│   ├── utils.ts              // Helper functions and common utilities
-│   ├── types.ts              // Type definitions for the extension
-├── specs/
-│   ├── extension.spec.ts      // Specs for extension.ts
-│   ├── testController.spec.ts // Specs for testController.ts
-│   ├── testRunner.spec.ts     // Specs for testRunner.ts
-│   ├── packageDetector.spec.ts// Specs for packageDetector.ts
-│   ├── ui/
-│   │   ├── decorations.spec.ts// Specs for decorations.ts
-│   │   ├── codeLens.spec.ts   // Specs for codeLens.ts
-├── package.json              // Extension metadata and dependencies
-├── tsconfig.json             // TypeScript configuration
-├── .vscode/
-│   ├── launch.json           // Debug configuration for extension development
-│   ├── settings.json         // Recommended VS Code settings
+.
+├── README.md
+├── biome.json
 ├── docs
-│   ├── scope.json               // Detailed scope of the project
-│   ├── test-explorer-study.json // Study on existing test explorer extensions
-└── README.md                 // Documentation for the extension
+│   ├── prompt.md
+│   ├── scope.md
+│   └── test-explorer-study.md
+├── import-map.json
+├── package-lock.json
+├── package.json
+├── specs
+│   ├── README.md
+│   ├── helpers
+│   │   └── testHelpers.ts
+│   ├── mocks
+│   │   ├── TestRunner.vsc.mock.ts
+│   │   ├── helpers
+│   │   │   └── workspaceHelper.ts
+│   │   └── vscode.mock.ts
+│   ├── packageDetector.spec.ts
+│   ├── testController.spec.ts
+│   ├── testRunner
+│   │   └── executeTestCommand.spec.ts
+│   ├── testRunner.spec.ts
+│   └── utils
+│       ├── buildCommand.spec.ts
+│       ├── mapTestStatus.spec.ts
+│       └── parseTestResults.spec.ts
+├── src
+│   ├── custom-types
+│   │   ├── DetectedPackage.d.ts
+│   │   ├── OutputHandler.d.ts
+│   │   ├── TestItemType.d.ts
+│   │   ├── TestResult.d.ts
+│   │   ├── TestRunOptions.d.ts
+│   │   └── WorkspaceInfo.d.ts
+│   ├── extension.ts
+│   ├── packageDetector.ts
+│   ├── testController.ts
+│   ├── testRunner
+│   │   └── executeTestCommand.ts
+│   ├── testRunner.ts
+│   ├── utils
+│   │   ├── buildCommand.ts
+│   │   ├── index.ts
+│   │   ├── mapTestStatus.ts
+│   │   └── parseTestResults.ts
+│   └── vscodeCore
+│       └── TestRunner.vsc.ts
+└── tsconfig.json
 ```
 
-6. **Development Guidelines:**  
+7. **Development Priority:**
+   - **Eating our own dog food**: The first priority is to get the extension working on its own codebase - we want to be able to use TurboTest Explorer to test TurboTest Explorer itself.
+   - Start with the critical functionality needed for the core test discovery and execution
+   - Focus on making the extension functional for our own development workflow first
+   - Once it works for our own development, expand to handle more general cases
+
+8. **Development Guidelines:**  
 
 - Use TypeScript for all code.
 - Follow TDD practices: for each feature, write tests that describe the desired behavior before writing the implementation.
@@ -76,6 +103,6 @@ TurboTestExplorer/
 - Optimize for a specific workflow (scoped to the current package) rather than a fully generic solution.
 - Leverage the Microsoft self-hosted test provider as a blueprint but strip out any features not needed for this specific stack.
 
-Begin by writing unit tests for `packageDetector.ts` that verify the detection of the current package from a given file path. Then, implement `packageDetector.ts` accordingly. Continue similarly with test discovery and test execution modules. Provide code in small, incremental commits, ensuring that tests pass before moving to the next module.
+Begin by writing unit tests for pure utility functions first, then move to core logic that depends on them. VS Code integrations should be tested last. Keep each module focused on a single responsibility, and ensure all functions are properly named and documented. Ensure all tests pass before considering any feature complete.
 
-Please generate the initial unit tests for `packageDetector.ts` using the Node.js native test runner with chai assertions.
+Please generate the tests for a utility function following the established patterns.
