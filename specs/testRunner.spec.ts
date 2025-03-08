@@ -3,7 +3,7 @@ import { expect } from 'chai';
 import * as cp from 'child_process';
 import * as vscode from 'vscode';
 import { TestRunner, TestRunOptions } from '../src/testRunner';
-import { DetectedPackage } from '../src/packageDetector';
+import { DetectedPackage } from '../src/custom-types/DetectedPackage';
 
 describe('Test Runner', () => {
   let runner: TestRunner;
