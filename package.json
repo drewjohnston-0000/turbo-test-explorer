@@ -39,25 +39,26 @@
 		}
 	},
 	"scripts": {
+		"build": "tsc",
 		"compile": "tsc -p ./",
 		"watch": "tsc -watch -p ./",
 		"pretest": "npm run compile",
-		"test": "node --test ./dist/specs",
-		"lint": "biome check .",
-		"format": "biome format . --write",
+		"biome:format": "npx @biomejs/biome format --write ./src",
+		"biome:lint": "npx @biomejs/biome lint ./src",
+		"biome:check": "npx @biomejs/biome check --write ./src",
+		"test": "npx tsc && node --import tsx --test --test-reporter spec specs/*.spec.ts specs/**/*.spec.ts",
 		"vscode:prepublish": "npm run compile"
 	},
 	"devDependencies": {
+		"@biomejs/biome": "^1.9",
 		"@types/chai": "^5.2",
-		"@types/glob": "^8.1",
 		"@types/node": "^22.13",
 		"@types/vscode": "^1.98",
 		"chai": "^5.2",
-		"glob": "^11.0",
-		"typescript": "^5.1.6",
-		"@biomejs/biome": "^1.9"
+		"typescript": "^5.1.6"
 	},
 	"dependencies": {
+		"tsx": "^4.19.3",
 		"vscode-uri": "^3.0.7"
 	}
 }
