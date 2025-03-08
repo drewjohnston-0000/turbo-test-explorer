@@ -1,14 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as vscode from 'vscode';
-
-/**
- * Type definition for a detected package
- */
-export type DetectedPackage = {
-  name: string;
-  path: string;
-};
+import type { DetectedPackage } from './custom-types/DetectedPackage';
 
 /**
  * Finds the npm package containing the given file path

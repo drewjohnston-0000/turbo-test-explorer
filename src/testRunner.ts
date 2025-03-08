@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import * as cp from 'child_process';
 import * as path from 'path';
-import type { DetectedPackage } from './packageDetector';
+import type { DetectedPackage } from './custom-types/DetectedPackage';
 
 /**
  * Test result data structure from Node.js native test runner JSON output
