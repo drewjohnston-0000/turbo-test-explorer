@@ -11,6 +11,9 @@
 				"useArrowFunction": "off",
 				"useLiteralKeys": "off"
 			},
+			"correctness": {
+				"noSwitchDeclarations": "off"
+			},
 			"performance": {
 				"noDelete": "off"
 			},
@@ -23,7 +26,8 @@
 				"noShoutyConstants": "warn",
 				"noUnusedTemplateLiteral": "off",
 				"useNodejsImportProtocol": "off",
-				"useTemplate": "off"
+				"useTemplate": "off",
+				"noNonNullAssertion": "off"
 			}
 		},
 		"ignore": ["*.spec.ts", "*.test.ts", "*.spec.js"]
