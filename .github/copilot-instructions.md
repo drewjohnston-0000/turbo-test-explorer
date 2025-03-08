@@ -2,6 +2,7 @@
 
 Focus on areas of code that are relevant to the task at hand. 
 Do not touch code that is unrelated to the task at hand.
+Do not edit the package.json - do not add or remove dependencies.
 Write thorough tests for all major functionality.
 Make sure all tests pass before submitting your code.
 Make sure your code is well-documented.
