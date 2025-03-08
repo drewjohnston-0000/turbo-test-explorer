@@ -2,11 +2,11 @@ import { it, describe, beforeEach, afterEach } from 'node:test';
 import * as os from 'os';
 import * as path from 'path';
 import * as fs from 'fs';
+// @ts-ignore
 import { expect } from 'chai';
 import { detectPackage } from '../src/packageDetector';
-import { createTempPackage, createTestFile, cleanupTempDir } from './helpers';
 
-describe('Package Detector', () => {
+describe('Testsuite: Package Detector', () => {
   // Temporary directory for test files
   const tempDir = path.join(os.tmpdir(), 'turbo-test-explorer-tests');
 
@@ -17,18 +17,24 @@ describe('Package Detector', () => {
 
   afterEach(() => {
     // Clean up temp directory
-    cleanupTempDir(tempDir);
+    if (fs.existsSync(tempDir)) {
+      fs.rmSync(tempDir, { recursive: true, force: true });
+    }
   });
 
-  it('should detect package for a file in package root', async () => {
+  it('should detect package from workspace path with package.json', () => {
     // Create a test package
-    const packagePath = createTempPackage(tempDir, 'test-package');
+    const packagePath = path.join(tempDir, 'test-package');
+    fs.mkdirSync(packagePath, { recursive: true });
 
-    // Create a test file
-    const filePath = createTestFile(packagePath, 'index.js', 'console.log("Hello");');
+    // Create package.json
+    fs.writeFileSync(
+      path.join(packagePath, 'package.json'),
+      JSON.stringify({ name: 'test-package', version: '1.0.0' }, null, 2)
+    );
 
     // Test detecting package
-    const pkg = await detectPackage(filePath);
+    const pkg = detectPackage(packagePath);
 
     // Verify the results
     expect(pkg).to.not.be.undefined;
@@ -36,63 +42,19 @@ describe('Package Detector', () => {
     expect(pkg?.path).to.equal(packagePath);
   });
 
-  it('should detect package for a file in nested directory', async () => {
-    // Create a test package
-    const packagePath = createTempPackage(tempDir, 'nested-package');
-
-    // Create nested directories and test file
-    const filePath = createTestFile(
-      packagePath,
-      'src/utils/helper.js',
-      'console.log("Hello");'
-    );
+  it('should return undefined for path without package.json', () => {
+    // Create an empty directory
+    const emptyPath = path.join(tempDir, 'empty-dir');
+    fs.mkdirSync(emptyPath, { recursive: true });
 
     // Test detecting package
-    const pkg = await detectPackage(filePath);
-
-    // Verify the results
-    expect(pkg).to.not.be.undefined;
-    expect(pkg?.name).to.equal('nested-package');
-    expect(pkg?.path).to.equal(packagePath);
-  });
-
-  it('should return undefined for a file not in a package', async () => {
-    // Create a file outside any package
-    const filePath = path.join(tempDir, 'standalone.js');
-    fs.writeFileSync(filePath, 'console.log("Standalone");');
-
-    // Test detecting package
-    const pkg = await detectPackage(filePath);
+    const pkg = detectPackage(emptyPath);
 
     // Verify the results
     expect(pkg).to.be.undefined;
   });
 
-  it('should detect parent package for a file in subpackage without package.json', async () => {
-    // Create a parent package
-    const parentPackagePath = createTempPackage(tempDir, 'parent-package');
-
-    // Create a directory that looks like a subpackage but has no package.json
-    const subPackagePath = path.join(parentPackagePath, 'packages/sub-package');
-    fs.mkdirSync(subPackagePath, { recursive: true });
-
-    // Create a test file in the subpackage
-    const filePath = createTestFile(
-      subPackagePath,
-      'index.js',
-      'console.log("Subpackage");'
-    );
-
-    // Test detecting package
-    const pkg = await detectPackage(filePath);
-
-    // Verify the results - should find the parent package
-    expect(pkg).to.not.be.undefined;
-    expect(pkg?.name).to.equal('parent-package');
-    expect(pkg?.path).to.equal(parentPackagePath);
-  });
-
-  it('should handle package.json with no name property', async () => {
+  it('should return undefined when package.json has no name property', () => {
     // Create a package with no name in package.json
     const packagePath = path.join(tempDir, 'unnamed-package');
     fs.mkdirSync(packagePath, { recursive: true });
@@ -103,13 +65,21 @@ describe('Package Detector', () => {
       JSON.stringify({ version: '1.0.0' }, null, 2)
     );
 
-    // Create a test file
-    const filePath = createTestFile(packagePath, 'index.js', 'console.log("Unnamed");');
-
     // Test detecting package
-    const pkg = await detectPackage(filePath);
+    const pkg = detectPackage(packagePath);
 
-    // Verify the results - should be undefined as no valid package name found
+    // Verify the results
+    expect(pkg).to.be.undefined;
+  });
+
+  it('should handle errors gracefully', () => {
+    // Create invalid path that will cause an error
+    const invalidPath = 'invalid-path';
+
+    // Test detecting package with invalid path
+    const pkg = detectPackage(invalidPath);
+
+    // Verify the results
     expect(pkg).to.be.undefined;
   });
 });
