@@ -1,0 +1,63 @@
+{
+	"name": "turbo-test-explorer",
+	"displayName": "TurboTest Explorer",
+	"description": "VS Code extension for running Node.js native tests in Turborepo monorepos",
+	"version": "0.1.0",
+	"engines": {
+		"vscode": "^1.70.0"
+	},
+	"categories": ["Testing"],
+	"activationEvents": ["onLanguage:typescript", "onLanguage:javascript"],
+	"main": "./dist/extension.js",
+	"contributes": {
+		"commands": [
+			{
+				"command": "turboTestExplorer.refresh",
+				"title": "Refresh Tests",
+				"category": "TurboTest Explorer"
+			},
+			{
+				"command": "turboTestExplorer.runAllTests",
+				"title": "Run All Tests in Monorepo",
+				"category": "TurboTest Explorer"
+			}
+		],
+		"configuration": {
+			"title": "TurboTest Explorer",
+			"properties": {
+				"turboTestExplorer.testMatch": {
+					"type": "array",
+					"default": ["**/*.spec.ts", "**/*.spec.js"],
+					"description": "Glob patterns to match test files"
+				},
+				"turboTestExplorer.turboBinaryPath": {
+					"type": "string",
+					"default": "npx turbo",
+					"description": "Path to the turbo binary or command to use"
+				}
+			}
+		}
+	},
+	"scripts": {
+		"compile": "tsc -p ./",
+		"watch": "tsc -watch -p ./",
+		"pretest": "npm run compile",
+		"test": "node --test ./dist/specs",
+		"lint": "biome check .",
+		"format": "biome format . --write",
+		"vscode:prepublish": "npm run compile"
+	},
+	"devDependencies": {
+		"@types/chai": "^5.2",
+		"@types/glob": "^8.1",
+		"@types/node": "^22.13",
+		"@types/vscode": "^1.98",
+		"chai": "^5.2",
+		"glob": "^11.0",
+		"typescript": "^5.1.6",
+		"@biomejs/biome": "^1.9"
+	},
+	"dependencies": {
+		"vscode-uri": "^3.0.7"
+	}
+}
