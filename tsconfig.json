@@ -4,7 +4,7 @@
 		"module": "NodeNext",
 		"outDir": "./dist",
 		"paths": {},
-		"typeRoots": ["../../node_modules/@types", "./src/custom-types"],
+		"typeRoots": ["./node_modules/@types", "./src/custom-types"],
 		"emitDecoratorMetadata": true,
 		"experimentalDecorators": true,
 		"strict": true,
@@ -15,6 +15,6 @@
 		"strictNullChecks": true,
 		"forceConsistentCasingInFileNames": true
 	},
-	"exclude": ["node_modules", "dist", "specs"],
-	"include": ["./src"]
+	"exclude": ["node_modules/", "dist/"],
+	"include": ["./src", "specs"]
 }
