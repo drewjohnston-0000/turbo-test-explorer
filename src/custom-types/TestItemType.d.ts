@@ -1,1 +1,1 @@
-export type TestItemType = 'file' | 'suite' | 'test';
+type TestItemType = 'file' | 'suite' | 'test';

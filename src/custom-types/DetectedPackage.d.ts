@@ -1,7 +1,7 @@
 /**
  * Type definition for a detected package
  */
-export type DetectedPackage = {
+type DetectedPackage = {
   name: string;
   path: string;
 };
