@@ -18,7 +18,8 @@
 				"noDelete": "off"
 			},
 			"suspicious": {
-				"noPrototypeBuiltins": "off"
+				"noPrototypeBuiltins": "off",
+				"noAssignInExpressions": "off"
 			},
 			"style": {
 				"useBlockStatements": "off",
