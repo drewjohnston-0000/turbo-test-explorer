@@ -1,6 +1,8 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 import { testController } from '../testController';
+import { detectPackage } from '../packageDetector';
+import { findTestFiles } from '../findTestFiles';
 
 /**
  * Creates and manages a VS Code Test Controller for the workspace
@@ -28,13 +30,7 @@ export function testControllerVSCode(
     children: TestItemModel[];
   }
 
-  interface Consumer {
-    addTestItem(item: TestItemModel): void;
-    clearItems(): void;
-    runTests(items: TestItemModel[]): Promise<void>;
-  }
-
-  const consumer: Consumer = {
+  const consumer = {
     addTestItem: (item: TestItemModel): void => {
       console.log(`Adding test item: ${item.id} - ${item.label}`);
       const vsCodeItem = createVSCodeTestItem(item);
@@ -51,194 +47,149 @@ export function testControllerVSCode(
 
     runTests: async (items: TestItemModel[]): Promise<void> => {
       console.log(`Running tests for ${items.length} items`);
-      const run = controller.createTestRun({
-        include: [],
-        exclude: [],
-        profile: undefined,
-        preserveFocus: false
-      });
-      console.log('Created test run');
+      const run = controller.createTestRun(new vscode.TestRunRequest());
 
       for (const item of items) {
         const vsCodeItem = testItemsMap.get(item.id);
         if (vsCodeItem) {
-          console.log(`Starting test: ${item.id}`);
           run.started(vsCodeItem);
 
-          // Simple simulation for MVP
-          console.log(`Simulating test execution for ${item.id}`);
-          await new Promise<void>(resolve => setTimeout(resolve, 500));
+          // TODO: Integrate with actual test runner here
+          // For now, just mark tests as passed for demonstration
+          await new Promise(resolve => setTimeout(resolve, 500));
 
-          console.log(`Test passed: ${item.id} (500ms)`);
-          run.passed(vsCodeItem, 500);
-        } else {
-          console.log(`Test item not found in map: ${item.id}`);
+          run.passed(vsCodeItem);
         }
       }
 
-      console.log('Ending test run');
       run.end();
     }
   };
 
-  // Function to convert our TestItem to VS Code TestItem
-  function createVSCodeTestItem(item: TestItemModel) {
-    console.log(`Creating VS Code test item for: ${item.id}`);
-
+  /**
+   * Converts our model to VS Code TestItem
+   */
+  function createVSCodeTestItem(item: TestItemModel): vscode.TestItem {
+    // If we already have this item, return it
     if (testItemsMap.has(item.id)) {
-      console.log(`Reusing existing test item: ${item.id}`);
       return testItemsMap.get(item.id)!;
     }
 
+    // Create a new test item
     const vsCodeItem = controller.createTestItem(
       item.id,
       item.label,
       vscode.Uri.file(item.uri)
     );
-    console.log(`Created new VS Code test item: ${item.id}`);
 
-    // Add children
+    // Add children recursively
     if (item.children && item.children.length > 0) {
-      console.log(`Processing ${item.children.length} children for ${item.id}`);
       for (const child of item.children) {
         const childItem = createVSCodeTestItem(child);
         vsCodeItem.children.add(childItem);
       }
-      console.log(`Added all children to ${item.id}`);
     }
 
     // Store in map
     testItemsMap.set(item.id, vsCodeItem);
-    console.log(`Added ${item.id} to test items map, map size: ${testItemsMap.size}`);
 
     return vsCodeItem;
   }
 
   // Get workspace path function
   const getWorkspacePath = () => {
-    const path = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath || '';
-    console.log(`Workspace path: ${path}`);
-    return path;
+    return vscode.workspace.workspaceFolders?.[0]?.uri.fsPath || '';
   };
 
   // Get test patterns function
   const getTestPatterns = () => {
     const config = vscode.workspace.getConfiguration('turboTestExplorer');
-    const patterns = config.get<string[]>('testMatch') || ['**/*.spec.ts', '**/*.spec.js'];
-    console.log(`Test patterns: ${patterns.join(', ')}`);
-    return patterns;
+    return config.get<string[]>('testMatch') || ['**/*.spec.ts', '**/*.spec.js'];
   };
 
   // Create the core controller
-  console.log('Creating core test controller');
   const core = testController(getWorkspacePath, consumer, getTestPatterns);
-  console.log('Core test controller created');
 
   // Add run profile
-  console.log('Adding run profile');
   controller.createRunProfile(
     'Run',
     vscode.TestRunProfileKind.Run,
     async (request, token) => {
-      console.log('Run profile executed', {
-        includeCount: request.include?.length || 0,
-        excludeCount: request.exclude?.length || 0
-      });
+      console.log('Test run requested');
 
-      const queue = [];
+      const itemsToRun: TestItemModel[] = [];
+      const collectItemsToRun = (item: vscode.TestItem) => {
+        // Find our model equivalent
+        const id = item.id;
+        const queue: vscode.TestItem[] = [item];
 
-      // Collect test items to run
+        while (queue.length > 0) {
+          const current = queue.shift()!;
+          const vsCodeItem = testItemsMap.get(current.id);
+
+          if (vsCodeItem) {
+            const modelItem: TestItemModel = {
+              id: vsCodeItem.id,
+              label: vsCodeItem.label,
+              uri: vsCodeItem.uri?.fsPath || '',
+              children: []
+            };
+            itemsToRun.push(modelItem);
+          }
+
+          // Add children to queue
+          // biome-ignore lint/complexity/noForEach: co-pilot did it
+          current.children.forEach(child => queue.push(child));
+        }
+      };
+
+      // If specific tests are selected, run only those
       if (request.include) {
-        for (const item of request.include) {
-          // Map back to our internal model
-          const id = item.id;
-          console.log(`Adding test to queue: ${id}`);
-          // In a real implementation, we'd map these to our internal model
-          // For MVP, we'll just simulate running
-          queue.push({ id });
-        }
+        request.include.forEach(collectItemsToRun);
+      } else {
+        // Otherwise run all tests
+        controller.items.forEach(collectItemsToRun);
       }
 
-      console.log(`Queue prepared with ${queue.length} tests`);
-
-      // Create a run
-      const run = controller.createTestRun(request);
-      console.log('Test run created');
-
-      // Process queue
-      for (const item of queue) {
-        if (token.isCancellationRequested) {
-          console.log('Run cancellation requested, stopping');
-          break;
-        }
-
-        const vsCodeItem = testItemsMap.get(item.id);
-        if (vsCodeItem) {
-          console.log(`Starting test execution: ${item.id}`);
-          run.started(vsCodeItem);
-
-          // Simple simulation
-          await new Promise(resolve => setTimeout(resolve, 500));
-          console.log(`Test execution completed: ${item.id}`);
-
-          run.passed(vsCodeItem);
-          console.log(`Marked test as passed: ${item.id}`);
-        } else {
-          console.log(`Test item not found for execution: ${item.id}`);
-        }
-      }
-
-      console.log('Ending test run');
-      run.end();
+      // Run the tests
+      await consumer.runTests(itemsToRun);
     },
-    true
+    true // Make this the default profile
   );
-  console.log('Run profile added');
 
   // Register refresh command
-  console.log('Registering refresh command');
   context.subscriptions.push(
     vscode.commands.registerCommand('turboTestExplorer.refresh', () => {
-      console.log('Refresh command triggered');
+      console.log('Manual refresh command triggered');
       core.refresh();
-      console.log('Refresh completed');
     })
   );
 
-  // Watch for changes to test files
-  console.log('Setting up file watcher for test files');
+  // Watch for file changes
   context.subscriptions.push(
     vscode.workspace.onDidSaveTextDocument(e => {
       const fileName = path.basename(e.fileName);
-      console.log(`File saved: ${fileName}`);
-
       const patterns = getTestPatterns();
 
-      const isTestFile = patterns.some(pattern => {
-        const simplifiedPattern = pattern.replace(/\*\*\//, '');
-        const suffix = simplifiedPattern.replace(/\*/g, '.*');
-        const regex = new RegExp(suffix.replace('.', '\\.'));
-        return regex.test(fileName);
+      // Simple check if this might be a test file
+      const couldBeTestFile = patterns.some(pattern => {
+        const suffix = pattern.replace(/^\*\*\//, '').replace(/\*/g, '');
+        return fileName.endsWith(suffix);
       });
 
-      if (isTestFile) {
-        console.log(`Test file detected, refreshing: ${fileName}`);
+      if (couldBeTestFile) {
+        console.log(`Test file ${fileName} changed, refreshing tests`);
         core.refresh();
-        console.log('Refresh after test file change completed');
-      } else {
-        console.log(`Not a test file, skipping refresh: ${fileName}`);
       }
     })
   );
 
-  console.log('Test Controller initialization complete');
   // Return disposable
   return {
     dispose: () => {
-      console.log('Disposing test controller');
+      console.log('Disposing VS Code test controller');
       controller.dispose();
       core.dispose();
-      console.log('Test controller disposed');
     }
   };
 }
