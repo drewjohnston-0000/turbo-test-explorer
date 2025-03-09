@@ -34,8 +34,18 @@ export function testControllerVSCode(
     addTestItem: (item: TestItemModel): void => {
       console.log(`Adding test item: ${item.id} - ${item.label}`);
       const vsCodeItem = createVSCodeTestItem(item);
-      controller.items.add(vsCodeItem);
-      console.log(`Added test item to controller: ${item.id}`);
+
+      // Only add top-level items directly to controller
+      if (item.id.startsWith('package:')) {
+        controller.items.add(vsCodeItem);
+        console.log(`Added package test item to controller: ${item.id}`);
+
+        // Log all items in the controller after adding
+        let itemCount = 0;
+        // biome-ignore lint/complexity/noForEach: co-pilot suggestion
+        controller.items.forEach(() => itemCount++);
+        console.log(`Controller now has ${itemCount} top-level items`);
+      }
     },
 
     clearItems: (): void => {
@@ -53,11 +63,9 @@ export function testControllerVSCode(
         const vsCodeItem = testItemsMap.get(item.id);
         if (vsCodeItem) {
           run.started(vsCodeItem);
-
           // TODO: Integrate with actual test runner here
           // For now, just mark tests as passed for demonstration
           await new Promise(resolve => setTimeout(resolve, 500));
-
           run.passed(vsCodeItem);
         }
       }
@@ -76,10 +84,11 @@ export function testControllerVSCode(
     }
 
     // Create a new test item
+    const uri = item.uri ? vscode.Uri.file(item.uri) : undefined;
     const vsCodeItem = controller.createTestItem(
       item.id,
       item.label,
-      vscode.Uri.file(item.uri)
+      uri
     );
 
     // Add children recursively
@@ -92,13 +101,19 @@ export function testControllerVSCode(
 
     // Store in map
     testItemsMap.set(item.id, vsCodeItem);
-
     return vsCodeItem;
   }
 
   // Get workspace path function
   const getWorkspacePath = () => {
-    return vscode.workspace.workspaceFolders?.[0]?.uri.fsPath || '';
+    if (!vscode.workspace.workspaceFolders || vscode.workspace.workspaceFolders.length === 0) {
+      console.log('No workspace folders found');
+      return '';
+    }
+
+    const path = vscode.workspace.workspaceFolders[0].uri.fsPath;
+    console.log(`Workspace path: ${path}`);
+    return path;
   };
 
   // Get test patterns function
@@ -116,10 +131,9 @@ export function testControllerVSCode(
     vscode.TestRunProfileKind.Run,
     async (request, token) => {
       console.log('Test run requested');
-
       const itemsToRun: TestItemModel[] = [];
+
       const collectItemsToRun = (item: vscode.TestItem) => {
-        // Find our model equivalent
         const id = item.id;
         const queue: vscode.TestItem[] = [item];
 
@@ -138,7 +152,7 @@ export function testControllerVSCode(
           }
 
           // Add children to queue
-          // biome-ignore lint/complexity/noForEach: co-pilot did it
+          // biome-ignore lint/complexity/noForEach: co-pilot suggestion
           current.children.forEach(child => queue.push(child));
         }
       };
@@ -164,6 +178,12 @@ export function testControllerVSCode(
       core.refresh();
     })
   );
+
+  // Perform immediate refresh on activation
+  setTimeout(() => {
+    console.log('Performing initial refresh');
+    core.refresh();
+  }, 500);
 
   // Watch for file changes
   context.subscriptions.push(
