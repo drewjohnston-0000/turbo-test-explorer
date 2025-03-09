@@ -7,8 +7,11 @@ import { expect } from 'chai';
 import { detectPackage } from '../src/packageDetector';
 
 describe('Testsuite: Package Detector', () => {
-  // Temporary directory for test files
-  const tempDir = path.join(os.tmpdir(), 'turbo-test-explorer-tests');
+  // Temporary directory for test files with unique identifier to prevent conflicts
+  const tempDir = path.join(
+    os.tmpdir(),
+    `turbo-test-explorer-tests-${Date.now()}-${Math.floor(Math.random() * 10000)}`
+  );
 
   beforeEach(() => {
     // Create temp directory
@@ -16,9 +19,26 @@ describe('Testsuite: Package Detector', () => {
   });
 
   afterEach(() => {
-    // Clean up temp directory
+    // Clean up temp directory with improved error handling
     if (fs.existsSync(tempDir)) {
-      fs.rmSync(tempDir, { recursive: true, force: true });
+      try {
+        // Close all file handles before deletion
+        // Allow some time for handles to be released
+        setTimeout(() => {
+          try {
+            fs.rmSync(tempDir, { recursive: true, force: true });
+          } catch (e) {
+            console.warn(`Failed to remove temp directory (delayed attempt): ${e}`);
+            // Not failing the test on cleanup issues
+          }
+        }, 100);
+
+        // Also try immediate removal
+        fs.rmSync(tempDir, { recursive: true, force: true });
+      } catch (e) {
+        console.warn(`Failed to remove temp directory: ${e}`);
+        // Not failing the test on cleanup issues
+      }
     }
   });
 
