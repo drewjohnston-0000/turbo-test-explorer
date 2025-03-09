@@ -24,9 +24,18 @@ describe('Find Test Files', () => {
 
   it('should find test files matching default patterns', () => {
     // Create test files
-    createTestFile(tempDir, 'example.spec.ts', '// Test file 1');
-    createTestFile(tempDir, 'another.spec.js', '// Test file 2');
-    createTestFile(tempDir, 'regular.ts', '// Not a test file');
+    const file1 = createTestFile(tempDir, 'example.spec.ts', '// Test file 1');
+    const file2 = createTestFile(tempDir, 'another.spec.js', '// Test file 2');
+    const file3 = createTestFile(tempDir, 'regular.ts', '// Not a test file');
+
+    // Verify files were actually created before proceeding
+    expect(fs.existsSync(file1), `File ${file1} should exist`).to.be.true;
+    expect(fs.existsSync(file2), `File ${file2} should exist`).to.be.true;
+    expect(fs.existsSync(file3), `File ${file3} should exist`).to.be.true;
+
+    // Ensure file system has synchronized
+    fs.fsyncSync(fs.openSync(file1, 'r'));
+    fs.fsyncSync(fs.openSync(file2, 'r'));
 
     // Find test files
     const testFiles = findTestFiles(tempDir);
